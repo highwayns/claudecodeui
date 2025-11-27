@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  claude-code-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: claude-code-ui
+    ports:
+      - "3001:3001"
+    environment:
+      # Server configuration
+      - NODE_ENV=production
+      - PORT=3001
+
+      # Database configuration
+      - DATABASE_PATH=/app/data/auth.db
+
+      # Context window size
+      - CONTEXT_WINDOW=160000
+      - VITE_CONTEXT_WINDOW=160000
+
+      # Optional: Custom Claude CLI path
+      # - CLAUDE_CLI_PATH=claude
+    volumes:
+      # Persist database
+      - claude-data:/app/data
+
+      # Optional: Mount custom .env file
+      # - ./.env:/app/.env:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    # Resource limits (adjust as needed)
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+volumes:
+  claude-data:
+    driver: local
